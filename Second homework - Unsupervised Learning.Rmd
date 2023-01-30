@@ -1,0 +1,1512 @@
+---
+title: "SECOND HOMEWORK: SUPERVISED LEARNING"
+subtitle: "Statistical Learning. Bachelor in Data Science and Engineering"
+author: "Alejandro Leonardo García Navarro"
+date: 'December 18, 2022'
+output:
+  prettydoc::html_pretty: 
+    theme: cayman
+    highlight: vignette
+    number_sections: true
+    toc: true
+    toc_depth: 2
+editor_options:
+  chunk_output_type: console
+---
+
+<style>
+body {
+font-family: Times New Roman;
+font-size: 12pt;
+text-align: justify}
+</style>
+
+
+```{r global_options, include=T, echo = F}
+knitr::opts_chunk$set(echo = T, warning=FALSE, message=FALSE, fig.height = 8, fig.width = 8, fig.align = 'center')
+```
+
+
+
+# Introduction to the homework.
+The aim of this homework is to apply supervised-learning tools to an open data set.
+Modern organizations and services already heavily rely on machine learning to 
+function. Machine learning models are used in a range of contexts, including
+social networking platforms, healthcare, and finance. However, depending on 
+the task and the data that is available, different procedures will be required
+to train and implement a model.
+
+There are two different approaches to machine learning model development,
+supervised and unsupervised learning, as examples. They differ in terms of how
+the models are trained and the quality of the necessary training data.
+A supervised learning model will typically encounter a different task or
+difficulty than an unsupervised learning model because each approach has
+different capabilities.
+
+Its name, "supervised machine learning," refers to the fact that at least some
+of this method requires human supervision. Most of the information that is
+available is unlabeled, raw information. For data to be adequately labeled
+and ready for supervised learning, human input is typically necessary.
+
+Basically, supervised machine learning is used to classify unseen data into
+established categories and forecast trends and future change as a predictive
+model. A model developed through supervised machine learning will learn to 
+recognize objects and the features that classify them.
+
+To proceed with the project, it was asked to select two important variables as 
+targets: one categorical (for classification) and the other one numerical (for regression).
+
+In order to do so, it was proposed to think about some goals or questions that
+may be desired to answer and, finally, get convenient insights and conclusions 
+from the output of the tools.
+
+
+# Information regarding the chosen dataset.
+Before starting with the homework, it is of high vitality to both show and
+explain the basics of the chosen data set. 
+This data set contains an airline passenger satisfaction survey and the main
+goal of it is to have a comprehensive understanding of what factors lead to 
+customer satisfaction for an airline; that is, what factors are highly
+correlated to a satisfied or dissatisfied passenger?
+
+It contains several variables. To be precise, 25:
+
+  - X: Refers to the number of row.
+  
+  - ID: Identifier of each passenger.
+  
+  - Gender: Gender of the passengers (Female, Male).
+  
+  - Customer Type: The customer type (Loyal customer, disloyal customer).
+  
+  - Age: The actual age of the passengers.
+  
+  - Type of Travel: Purpose of the flight of the passengers (Personal Travel, Business Travel).
+  
+  - Class: Travel class in the plane of the passengers (Business, Eco, Eco Plus).
+  
+  - Flight distance: The flight distance of this journey.
+  
+  - Inflight wifi service: Satisfaction level of the inflight wifi service (0:Not Applicable;1-5).
+  
+  - Departure/Arrival time convenient: Satisfaction level of Departure/Arrival time convenient.
+  
+  - Ease of Online booking: Satisfaction level of online booking.
+  
+  - Gate location: Satisfaction level of Gate location.
+  
+  - Food and drink: Satisfaction level of Food and drink.
+  
+  - Online boarding: Satisfaction level of online boarding.
+  
+  - Seat comfort: Satisfaction level of Seat comfort.
+  
+  - Inflight entertainment: Satisfaction level of inflight entertainment.
+  
+  - On-board service: Satisfaction level of On-board service.
+  
+  - Leg room service: Satisfaction level of Leg room service.
+  
+  - Baggage handling: Satisfaction level of baggage handling.
+  
+  - Check-in service: Satisfaction level of Check-in service.
+  
+  - Inflight service: Satisfaction level of inflight service.
+  
+  - Cleanliness: Satisfaction level of Cleanliness.
+  
+  - Departure Delay in Minutes: Minutes delayed when departure.
+  
+  - Arrival Delay in Minutes: Minutes delayed when Arrival.
+  
+  - Satisfaction: Airline satisfaction level (Satisfaction, neutral or dissatisfaction).
+  
+
+## Loading dataset.
+The data set is uploaded using the 'read.csv' function. It is known that the
+most common way that scientists store data is in Excel spreadsheets. While
+there are R packages designed to access data from Excel spreadsheets, it is
+often easier to save spreadsheets in comma-separated values files (CSV) and 
+then use R’s built in functionality to read and manipulate the data. 
+```{r}
+set.seed(123)
+# STEP 1: Erase the global environment.
+rm(list = ls())
+
+# STEP 2: Install useful packages.
+# Library that contains new tools for the visualization of missing values.
+library(VIM)
+
+# Library used for data visualization.
+library(ggplot2)
+library(cowplot)
+
+# Library focused on tools for working with data frames.
+library(dplyr)
+
+# Library that is a collection of R packages designed for data science. 
+library(tidyverse)
+
+# Library that extends 'ggplot2'. Mainly used to make heatmap-like graphs.
+library(GGally)
+
+# Libraries used for clustering. In particular, the library 'mclust' is an
+# R package for model-based clustering, classification, and density estimation
+# based on finite normal mixture modelling.
+library(cluster)
+library(mclust)
+
+# Libraries used for classification.
+library(skimr)
+library(mice)
+library(MASS)
+library(glmnet)
+library(e1071) 
+library(rpart)
+library(pROC)
+library(class)
+library(randomForest)
+library(caret)
+library(rpart.plot)
+
+# Libraries for regression.
+library(olsrr)
+library(elasticnet)
+
+
+# STEP 3: Load dataset.
+passengers <- read.csv("passengers.csv")
+dataset <- as.data.frame(passengers)
+```
+
+
+
+# Data preprocessing.
+Once the data is uploaded, the very first thing that must be carried out is
+the so-called 'Data cleaning'. This is the process of fixing or removing
+incorrect corrupted, incorrectly formatted, duplicated, or incomplete data
+within a data set. There are several steps that must be followed.
+
+
+## STEP 1: Removing duplicated or irrelevant observations.
+By observing the data set, it appears that, as of right now, two variables
+seem to be useless; 'X' and 'id'. First off, 'X' indicates the number of row.
+Consequently, is is deleted, since rows are already numbered. Moving on, as in
+this project it is not desired to analyze the passengers by themselves, but
+rather their answers to the surveys, the variable 'id'  can be omitted.
+```{r}
+dataset$X <- NULL
+dataset$id <- NULL
+```
+
+Once irrelevant observations are deleted, it is now time to remove the
+duplicates, in case there are any. To do so, the function 'duplicated()'
+is used. It determines which elements of a vector or data frame are duplicates
+of elements with smaller subscripts, and returns a logical vector indicating
+which elements (rows) are duplicates.
+
+Moreover, due to the extent of this dataset, it will be impossible to recognize
+which rows contain 'TRUE' values just by observing it (the line duplicated(dataset)
+would be run in case this method was to be applied). Due to this exact purpose, 
+other method is followed.
+
+Another dataset is created using '!duplicated()', where '!' indicates logical
+negation, so that a data set with no duplicates is obtained. Then, the original
+and the new data set are compared to know if there where duplicates or not.
+```{r}
+data_unique <- dataset[!duplicated(dataset),]
+identical(dataset, data_unique)
+```
+
+Hence, as they are identical, there are no duplicates in the dataset.
+
+
+## STEP 2: Fix or remove typos or errors.
+Having analyzed all the columns, no big typos or errors are spotted.
+Nonetheless, in order to provide a more straightforward output, the
+'satisfaction' column is modified to have 'satisfied' and 'dissatisfied';
+instead of 'satisfied' and 'neutral or dissatisfied'.
+```{r}
+data_unique$satisfaction[data_unique$satisfaction == "neutral or dissatisfied"] <- "dissatisfied"
+```
+
+Furthermore, it is a must to take into account that the categorical variables
+must be transformed into factors. Factors are data structures in R that store 
+categorical data. In datasets, there are often fields that take only a few
+predefined values. Hence, some modifications must be performed.
+```{r}
+data_unique$Gender = as.factor(data_unique$Gender)
+data_unique$Customer.Type = as.factor(data_unique$Customer.Type)
+data_unique$Type.of.Travel = as.factor(data_unique$Type.of.Travel)
+data_unique$Class = as.factor(data_unique$Class)
+data_unique$satisfaction = as.factor(data_unique$satisfaction)
+```
+
+Besides, before finishing this phase, it is decided to transform variables
+that are numbers into numeric. This is done not because it is vital, but 
+because it may provide better ease during certain phases of the project.
+```{r}
+data_unique[c(3, 6:22)] <- lapply(data_unique[c(3, 6:22)], as.numeric)
+```
+
+
+## STEP 3: Missing values.
+A missing value is a non-present value in a variable. It is a must to identify
+them and decide what to do.
+```{r}
+sum(is.na(data_unique))
+```
+
+With the help of the function 'aggr()', it is possible to visually see which
+specific variables contain empty values.
+```{r}
+aggr(data_unique, col = c("#0072BB", "#D21404"), numbers = TRUE, sortVars = TRUE, labels = names(dataset), cex.axis = .7, gap = 1, ylab= c('Missing data','Pattern'))
+```
+
+As demonstrated, the missing values are on the 'Arrival.Delay.in.Minutes' variable.
+As of right now, several steps must be followed:
+
+    1. Determine what to do: 
+    As stated in class, if they are just a few and not relevant, they can be deleted.
+    Say less than 5% of the sample. Otherwise:
+        a) We can remove rows when most of their corresponding variables are empty.
+        b) We can remove columns when most of their corresponding rows are empty.
+
+    2. Delete missing values:
+    In this case, 5195,2 is 5% of 103904. Since there are 310, that is, less than
+    5% of the sample, the decision of removing these is taken.
+```{r}
+final_dataset <- na.omit(data_unique)
+```
+
+Nonetheless, one may wonder what should be done in case there were more than
+5% of the sample. The answer is that these must be replaced with the mean.
+The process would be the following:
+```{r}
+#final_dataset <- data_unique
+#for (i in 1:ncol(final_dataset)){
+#  final_dataset[,i][is.na(final_dataset[,i])] <- mean(final_dataset[,i], na.rm = TRUE)
+#}
+```
+
+As can be seen above, a 'for loop' would be used to optimize the process of 
+deleting "NA" values. If this was not performed like this way, it should be
+done one by one, knowing beforehand which variables had missing values,
+which could have taken more than usual.
+
+
+## STEP 4: Outliers.
+Before dealing with outliers, it is key to understand what these are. An
+outlier is an observation that lies an abnormal distance from other values
+in a random sample from a population (for example, if it is desired to study
+the weight of people an all the provided values ranges between 40kg-60kg,
+then, an outlier would be 700kg). There are several ways of checking these:
+either make a boxplot for every single variable or make a general boxplot for
+the entire dataset. The second method is followed.
+
+In order to see clearly the boxplots, the function 'par()' was used. The
+par() function is used to set or query graphical parameters. We can divide
+the frame into the desired grid, add a margin to the plot or change the 
+background color of the frame by using the par() function. We can even utilize it
+to create multiple plots at once.
+```{r}
+# So, firstly, the number of rows(4) and columns(5) are specified, respectively.
+par(mfrow=c(4, 6))
+
+# Then, a 'for loop' is used to retrieve all the boxplots.
+cols <- c(3, 6:22)
+for (i in(cols)){
+  boxplot(final_dataset[i], col = "#BF0A30",xlab = names(final_dataset)[i])
+}
+```
+
+One can spot that variables like 'Flight.Distance', 'Checkin.service',
+'Departure.Delay.in.Minutes' and 'Arrival.Delay.in.Minutes' contain outliers.
+Howbeit, a closer look in these variables is required to get better 
+understandings and, therefore, take decisions.
+
+After having analyzed them closer, now it is in our hands to whether or not
+get rid of these values. After a considering time debating this, the decision 
+of not deleting any of the outliers was taken. This is because these values
+may influence the rest, specially 'satisfaction', which constitutes a key 
+pillar in the dataset.
+
+Still, if these values were to be deleted, an easy process would be followed.
+To do this, a fast method is applied. Instead of going through every column
+of the dataset and plot the boxplot, it is better to implement a 'for loop' that
+goes through the entire dataset and marks the outliers as empty values. 
+
+However, how is it done?
+The loop will go only through the columns that are desired; in our case, these are
+the numerical/integer variables (columns 3 and 6 through 22). Inside the loop, 
+the variable 'value' is created. This variable contains all the outliers, which
+are obtained using 'boxplot.stats()'. This function is typically called by
+another function to gather the statistics necessary for producing box plots, 
+but may be invoked separately. In addition, concretely, '$out' gets the values
+of any data points which lie beyond the extremes of the whiskers.
+Then, lastly, all these values are marked as empty values, which will be
+deleted in the next step.
+```{r}
+#for (i in c(2:12)){
+#  value = data_unique[,i][data_unique[,i] %in% boxplot.stats(data_unique[,i])$out]
+# data_unique[,i][data_unique[,i] %in% value] = NA}
+
+# Therefore, these would be deleted:
+# final_dataset <- na.omit(data_unique)
+```
+
+
+## STEP 5: Conclusion of data preprocessing.
+As of right now, the first part of the project is finished. In this part,
+as a recapitulation, the following changes were performed:
+      1. Removed two irrelevant columns.
+      2. Removed duplicates.
+      3. Fixed the variable 'satisfaction'.
+      4. Transformed variables into factors and numeric to ease some processes.
+      5. Detected outliers.
+
+It can even be observed how much of our dataset was retained, and how much
+was deleted.
+```{r}
+values_now <- as.numeric(nrow(final_dataset))
+values_before <- as.numeric(nrow(dataset)) - values_now
+count <- c(values_before, values_now)
+pie_labels <- paste0(round(100 * count/sum(count), 2), "%")
+pie(count, labels = pie_labels, main="Final dataset after data preprocessing")
+legend("topleft", legend = c("Dropped", "Retained"),
+       fill =  c("white", "lightblue"))
+```
+
+
+# Visualization tools to get insights before the tools.
+For this part, it is basically asked to perform an exploratory data analysis.
+This refers to the critical process of performing initial investigations on
+data so as to discover patterns, to spot anomalies, to test hypothesis and to
+check assumptions with the help of summary statistics and graphical representations.
+
+A step of high vitality to perform is to obtain a heatmap that shows us how
+related are the variables among them. With this, certain queries can be
+proposed and, hence, be able to fully understand the relation among the
+variables contained in the dataset.
+```{r}
+data_heatmap <- as.data.frame(sapply(final_dataset, as.numeric))
+ggcorr(data_heatmap, hjust = 0.75, size = 2.5) + ggplot2::labs(title = "Dataset heatmap")
+```
+
+This heatmap shows the correlation coefficients among all the variables.
+The correlation coefficient is a statistical measure of the strength of a
+linear relationship between two variables. Its values can range from -1 to 1:
+    - A correlation coefficient of -1 describes a perfect negative correlation. 
+    - A coefficient of 1 shows a perfect positive correlation. 
+    - A correlation coefficient of 0 means there is no linear relationship. 
+
+Furthermore, as illustrated, variables along the lines of 'Inflight.wifi.service',
+'Food.and.Drink' or even 'Seat.comfort' are worth studying.
+
+For this part of the project, several questions are proposed to get valuable
+information from the variables, as well as check if certain values of one variable
+directly affects the values of other.
+
+    Q1: Is the travel class in somehow related to the satisfaction of the passengers?
+    If so, which class is the most satisfied?
+```{r}
+ggplot(final_dataset) + aes(x = Class, fill = satisfaction) + 
+  geom_bar(position = 'dodge') +
+  xlab('Passenger class') + ylab('Number of satisfied people') +
+  scale_fill_manual(values = c("#65a765", "#4B774B")) +
+  labs(title = "Passenger class vs. Satisfaction") +
+  theme(plot.title = element_text(size = 16L, hjust = 0.5))
+```
+
+According to the graph shown above, it is clear that those passengers belonging
+to Business class are the most satisfied ones. By seeing these results, it is
+clear that some improvements must be done in the rest of the classes.
+Moreover, further investigations could be pursued and discover what is that
+causes this big dissatisfaction among the passengers of other classes.
+
+
+    Q2: We all are passengers, may it be of cars, trains, planes... and we know
+    how vital a comfortable seat is. Hence, is this a big influence in the
+    passengers' satisfaction? Is this also related to the age and the class?
+```{r}
+ggplot(final_dataset) +
+  aes(x = Seat.comfort, y = Age, colour = satisfaction) +
+  geom_jitter(size = 1.5) +
+  scale_color_manual(
+    values = c(dissatisfied = "#FF6252",
+               satisfied = "#65a765")) +
+  theme_minimal() +
+  facet_wrap(vars(Class)) +
+  labs(title = "Influence of seat comfort and age on the satisfaction") +
+  theme(plot.title = element_text(size = 16L, hjust = 0.5))
+```
+
+Several conclusions can be made from this graph:
+    1. The most dissatisfied passengers belong to Eco class, no matter the age.
+    2. The most uncomfortable seats are located in the Eco class.
+    3. As observed, it would be a good recommendation for airlines to upgrade
+    their seats, as passengers tend to prefer a comfortable seat rather than
+    the class.
+    4. The satisfaction does not depend on the age, moreover, we cannot be sure
+    about this, so let's try to figure this out in next questions.
+
+
+    Q3: Is the the age of the passenger related to the type of customer?
+```{r}
+ggplot(final_dataset) +
+  aes(x = Age, fill = Customer.Type) +
+  geom_density(adjust = 1L) +
+  scale_fill_manual(values = c(`disloyal Customer` = "#FFA068",`Loyal Customer` = "#CAE9F5")) +
+  labs(y = "Density") +
+  theme_bw() +
+  facet_wrap(vars(Customer.Type)) +  
+  labs(title = "Relation of age and type of customer") +
+  theme(plot.title = element_text(size = 16L, hjust = 0.5))
+```
+
+From very little age to almost 35, and from age 35 to 40, the number of
+disloyal passengers is very high compared to loyal passengers. On the contrary,
+in age range 40 to 60, the number of loyal customers are higher compared to the rest.
+
+
+    Q4: Is the type of travel related, in a way or another, to the class of the passengers? 
+```{r}
+ggplot(final_dataset) +
+  aes(x = Type.of.Travel, fill = Class) +
+  geom_bar(position = "dodge") +
+  scale_fill_manual(values = c(Business = "#D6B85A", Eco = "#F9E076", `Eco Plus` = "#FDF443")) +
+  labs(x = "Type of travel",y = '') +
+  theme_minimal() +
+  labs(title = "Type of travel vs. Class") +
+  theme(plot.title = element_text(size = 16L, hjust = 0.5))
+```
+
+After an in-depth analysis of the graph exposed above, it is clear that those
+traveling because of business reasons tend to travel in business class, even
+though the number of those traveling in eco and eco plus are almost the same, 
+no matter the type of travel.
+
+
+    Q5: Are the variables Departure.Delay.in.Minutes and Arrival.Delay.in.Minutes
+    related to the satisfaction?
+```{r}
+final_dataset %>%
+ filter(Departure.Delay.in.Minutes >= 0 & Departure.Delay.in.Minutes <= 750) %>%
+ filter(Arrival.Delay.in.Minutes >= 0 & Arrival.Delay.in.Minutes <= 750) %>%
+ ggplot() +
+ aes(x = Departure.Delay.in.Minutes, y = Arrival.Delay.in.Minutes, colour = satisfaction) +
+ geom_point(shape = "circle", size = 1.5) +
+ scale_color_hue(direction = 1) +
+ labs(x = "Departure delay in minutes", y = "Arrival delay in minutes") +
+ theme_minimal() +
+ theme(legend.position = "top") +
+  geom_smooth() +
+  labs(title = "Influence of flight delays on the satisfaction") +
+  theme(plot.title = element_text(size = 16L, hjust = 0.5))
+```
+
+Indeed, there is a positive linear relationship between the variables.
+Concerning these variables, it is clear that the lower the delay, the more the
+satisfied number of passengers. Nonetheless, even with no delay there are still
+some passengers who are dissatisfied. This may be explained with other variables.
+
+
+    Q6:Is the satisfaction influenced by the variables Cleanliness, Ease.of.Online.booking, 
+    Food.and.drink, and Seat.comfort?
+```{r}
+plot1 <- ggplot(final_dataset) +
+ aes(x = satisfaction, y = Cleanliness) +
+ geom_col(fill = "#FA8128") +
+ labs(x = "Satisfaction", 
+ y = "Cleanliness") +
+ theme_bw() +
+ facet_wrap(vars(Cleanliness), ncol = 6L) +   
+  labs(title = "Influence of cleanliness on the satisfaction") +
+  theme(plot.title = element_text(size = 10L, hjust = 0.5))
+
+plot2 <- ggplot(final_dataset) +
+  aes(x = satisfaction, y = Ease.of.Online.booking) +
+  geom_col(fill = "#FA8128") +
+  labs(x = "Satisfaction", 
+       y = "Ease of online boarding") +
+  theme_bw() +
+  facet_wrap(vars(Ease.of.Online.booking), ncol = 6L) +
+  labs(title = "Influence of the ease of online booking on the satisfaction") +
+  theme(plot.title = element_text(size = 10L, hjust = 0.5))
+
+plot3 <- ggplot(final_dataset) +
+  aes(x = satisfaction, y = Food.and.drink) +
+  geom_col(fill = "#FA8128") +
+  labs(x = "Satisfaction", 
+       y = "Food and drink") +
+  theme_bw() +
+  facet_wrap(vars(Food.and.drink), ncol = 6L) +
+  labs(title = "Influence of the food satisfaction on the overall satisfaction") +
+  theme(plot.title = element_text(size = 10L, hjust = 0.5))
+
+plot4 <- ggplot(final_dataset) +
+  aes(x = satisfaction, y = Seat.comfort) +
+  geom_col(fill = "#FA8128") +
+  labs(x = "Satisfaction", 
+       y = "Seat comfort") +
+  theme_bw() +
+  facet_wrap(vars(Seat.comfort), ncol = 6L) +
+  labs(title = "Influence of the seat comfort on the satisfaction") +
+  theme(plot.title = element_text(size = 10L, hjust = 0.5))
+
+plot_grid(plot1, plot2, plot3, plot4)
+```
+
+For all these features, the maximum number of satisfied passengers belong to
+categories 4 and 5. Below these, passengers are dissatisfied.
+
+
+
+# Classification.
+As explained in the introduction of the project, supervised techniques adapt
+the model to reproduce outputs known from a training set. In the beginning, 
+the system receives input data as well as output data. Its task is to create
+appropriate rules that map the input to the output. The training process should
+continue until the level of performance is high enough. After training, the 
+system should be able to assign an output objects which it has not seen during
+the training phase. In most cases, this process is really fast and accurate.
+
+One must know that there are two types of Supervised Learning techniques: Regression
+and Classification.
+Regarding the former, classification is a technique for reproducing class
+assignments. It can predict the response value and splits the data into classes.
+This can be the case of the recognition of a vehicle type in a photograph, or if
+whether or not an email is spam; regarding the latter, regression is a 
+technique that aims to reproduce the output value. It can be used, for example, 
+to predict the price of some product. Basically, regression fits the data.
+
+Before starting, a prime point must be explained: as classification is used to predict
+a categorical variable from various inputs, "y" is categorical; whilst in regression
+"y" is numerical.
+
+
+## Statistical classification.
+Statistical classification is a statistical procedure in which individual items
+are placed into groups based on quantitative information on one or more
+characteristics inherent in the items and based on a training set of previously
+labeled items.
+
+There are some methods along the lines of: logistic regression (appropriate
+regression analysis to conduct when the dependent variable is binary)
+and Bayes classifiers (probabilistic model that makes the most probable
+prediction for a new example.)
+
+Before starting, let's split between training and test sets:
+```{r}
+# Split between training and testing sets. Due to the massiveness of the dataset,
+# both underfitting and overfitting are desired to be prevented. Because of this,
+# the data set is split in a 65-35 ratio.
+spl = createDataPartition(final_dataset$satisfaction, p = 0.65, list = FALSE)  # 65% for training
+PassengersTrain = final_dataset[spl,]
+PassengersTest = final_dataset[-spl,]
+```
+
+
+### Penalized logistic regression.
+It is of high vitality to understand that there are two kinds of logistic
+regression. There is the "simple" logistic regression explained above;
+and the penalized logistic regression. The latter imposes a penalty to the 
+logistic model for having too many variables. This results in shrinking the
+coefficients of the less contributive variables toward zero. This is also known
+as regularization
+
+When the dimension is high, it is better to use a penalized version.
+The most known is glmnet or elasticnet. 
+```{r}
+set.seed(123)
+# To begin with, the function 'trainControl()' is used. The function trainControl 
+# generates parameters that further control how models are created, with important 
+# values like :
+#     1. 'method': the resampling method. In this case, 'cv' was applied, which stands
+#         for cross-validation (a statistical method of evaluating and comparing learning
+#         algorithms by dividing data into two segments: one used to learn or train a model
+#         and the other used to validate the model).
+#     2. 'number': either the number of folds or the number of resampling iterations.
+#         In this case, a 5-fold cross-validation is considered a good choice,
+#         since it is considered to obtain pretty accurate results. 
+
+ctrl <- trainControl(method = "cv", number = 5,
+                     classProbs = TRUE, 
+                     verboseIter=T)
+
+# Then, the function 'train' is applied. This function sets up a grid of tuning
+# parameters for a number of classification and regression routines, fits each
+# model and calculates a resampling based performance measure. It contains 
+# important fields like: 
+#     1. 'satisfaction~.': it indicates which is the dependent variable.
+#     2. 'method': a string specifying which classification or regression model
+#         to use. 'glmnet' is the best for penalized logistic regression. It fits
+#         generalized linear and similar models via penalized maximum likelihood.
+#     3. 'tuneGrid': by default, caret will estimate a tuning grid for each method.
+#         However, sometimes the defaults are not the most sensible given the nature
+#         of the data. The tuneGrid argument allows the user to specify a custom
+#         grid of tuning parameters as opposed to simply using what exists implicitly.
+#     4. 'metric': a string that specifies what summary metric will be used to
+#         select the optimal model. By default, possible values "Accuracy" and "Kappa"
+#         for classification.
+
+lrFit <- train(satisfaction ~ ., 
+               method = "glmnet",
+               tuneGrid = expand.grid(alpha = seq(0, 1, 0.1), lambda = seq(0, .1, 0.02)),
+               metric = "Kappa",
+               data = PassengersTrain,
+               preProcess = c("center", "scale"),
+               trControl = ctrl)
+print(lrFit)
+
+# Once the model is fit, it is time to check if it is a valid one or not.
+# This will be tested on the testing dataset using the function 'predict'.
+lrPred = predict(lrFit, PassengersTest)
+```
+
+Finally, it is time to check the effectiveness of our model using the confusion matrix.
+Being one of the pillars of data science, the confusion matrix is a performance 
+measurement for machine learning classification. It is a table with 4 different 
+combinations of predicted and actual values:
+
+    1. True Positive: You predicted positive and it’s true.
+    2. True Negative: You predicted negative and it’s true.
+    3. False Positive (Type 1 Error): You predicted positive and it’s false.
+    4. False Negative (Type 2 Error): You predicted negative and it’s false.
+
+<center>
+<img src="confussion_matrix.png" width="500"/>
+</center>
+
+<br>
+
+```{r}
+confusionMatrix(lrPred, PassengersTest$satisfaction)
+```
+
+Several insights can and must be analyzed from the given confusion matrix.
+First off, there are several performance measures that must be understood.
+As noticed, performance measures allow us to know how well our model works.
+Regarding accuracy (number of correct predictions divided by the total number
+of predictions. An accuracy score will give a value between 0 and 1), the value
+obtained is 0.8735, meaning it is very close to being a perfect model.
+
+Secondly, there is Kappa. The kappa statistic compares the observed accuracy
+to an expected accuracy or the accuracy expected from random chance. 
+One of the flaws of pure accuracy is that if a class is imbalanced then
+making predictions at random could give a high accuracy score. 
+Kappa accounts for this by comparing the model accuracy to the expected accuracy
+based on the number of instances in each class.
+Essentially it tells us how the model is performing compared to a model that
+classifies observations at random according to the frequency of each class.
+It returns a value at or below 1, negative values are possible. 
+
+One drawback of this statistic is that there is no agreed standard to interpret 
+its values. Although, a general interpretation of the metric was given by Landis and Koch in 1977:
+
+    1. <0: Poor agreement,
+    2. 0.0-0.20: Slight agreement.
+    3. 0.21-0.40: Fair agreement.
+    4. 0.41-0.60: Moderate agreement.
+    5. 0.61-0.80: Substantial agreement.
+    6. 0.81-1: Almost perfect agreement.
+
+In this case, we obtained 0.7411, considered a good result, although not perfect.
+Finally, there are two more measures worth mentioning: sensitivity and 
+specificity. The former is the metric that evaluates a model's ability to
+predict true positives of each available category; the latter is the metric
+that evaluates a model's ability to predict true negatives of each available category.
+Both range from 0 to 1. For both cases, very good results were obtained:
+0.9055 and 0.8318, respectively.
+
+Even though this represents a good model, let's try to get a better one.
+
+
+## Variable importance.
+Before trying to get a better model, it is a recommendation to try and analyze
+the importance of each of the variables. This will provide us with valid
+information regarding which variables influence more in the outcomes, as well
+as prove or disprove our thoughts regarding the importance of these on the dataset.
+```{r}
+lr_imp <- varImp(lrFit, scale = F)
+plot(lr_imp, scales = list(y = list(cex = .95)))
+```
+
+As observed, the most important variable is 'Type.of.TravelPersonal Travel',
+having a value greater than 1 in the scale of Importance shown in the y axis.
+There are others along the lines of 'Online.boarding', 'Customer.TypeLocal Customer',
+and 'Inflight.wifi.service' that have an importance greater than 0.5, which
+are still a good value. The rest, nonetheless, seem to contribute little.
+
+
+### The ROC curve to improve the model.
+A ROC curve is a graph showing the performance of a classification model at all
+classification thresholds. This curve plots two parameters:
+
+    - 1. True Positive Rate in the y-axis.
+    - 2. False Positive Rate in the x-axis.
+
+```{r}
+set.seed(123)
+# First off, it is a must to obtain the ROC curve that will show us the necessary
+# information.
+lrProb = predict(lrFit, PassengersTest, type="prob")
+
+plot.roc(PassengersTest$satisfaction, lrProb[,2],col="darkblue", print.auc = TRUE,  auc.polygon=TRUE, grid=c(0.1, 0.2),
+         grid.col=c("green", "red"), max.auc.polygon=TRUE,
+         auc.polygon.col="lightblue", print.thres=TRUE)
+
+# Then, let's use the threshold from the ROC curve.
+threshold = 0.5
+lrProb = predict(lrFit, PassengersTest, type="prob")
+lrPred = rep("dissatisfied", nrow(PassengersTest))
+lrPred[which(lrProb[,2] > threshold)] = "satisfied"
+plr_results <- confusionMatrix(factor(lrPred), PassengersTest$satisfaction)
+plr_results
+```
+
+Note the trade-off between false negatives and false positives is the same.
+Even more, everything rests the same. Hence, it is not necessary to improve
+the model.
+
+
+### Bayes classifiers.
+### Quadratic Discriminant Analysis.
+First off, QDA will be applied. Quadratic Discriminant Analysis (QDA) is a
+generative model, which assumes that each class follow a Gaussian distribution.
+QDA, because it allows for more flexibility for the covariance matrix, tends to
+fit the data better than LDA (Linear Discriminant Analysis), but then it has
+more parameters to estimate. The number of parameters increases significantly 
+with QDA, because, with QDA, you will have a separate covariance matrix for
+every class. If there are many classes and not so many sample points, this can be
+a problem.
+
+In order to perform a QDA, the function 'qda.model()' from the package
+MASS will be used. As observed, only two things must be specified in the 
+function: the dependent variable (satisfaction); and the dataset (PassengersTrain).
+```{r}
+set.seed(123)
+qda.model <- qda(satisfaction ~ ., data=PassengersTrain)
+qda.model
+```
+
+Once the model is fit, it is time to check if it is a valid one or not.
+This will be tested on the testing dataset using the function 'predict'.
+```{r}
+prediction = predict(qda.model, newdata=PassengersTest)$class
+```
+
+Finally, it is time to check the effectiveness of our model using the confusion matrix
+(check above for further explanations).
+```{r}
+qda_results <- confusionMatrix(prediction, PassengersTest$satisfaction)
+qda_results
+```
+
+As demonstrated, the model done with QDA seems to be a good prediction model, even
+though not better than the one obtained with penalized logistic regression.
+This can be highlighted since the accuracy obtained is of 0.8538. However, let's
+check if using LDA better performance can be obtained.
+
+
+## LDA.
+In order to perform a LDA, the function 'lda.model()' from the package
+MASS will be used. As observed, only two things must be specified in the 
+function: the dependent variable (satisfaction); and the dataset (PassengersTrain).
+```{r}
+lda.model <- lda(satisfaction ~ ., data=PassengersTrain)
+lda.model
+```
+
+Once the model is fit, it is time to check if it is a valid one or not.
+This will be tested on the testing dataset using the function 'predict'.
+```{r}
+prediction = predict(lda.model, newdata=PassengersTest)$class
+```
+
+Finally, it is time to check the effectiveness of our model using the confusion matrix
+(check above for further explanations).
+```{r}
+lda_results <- confusionMatrix(prediction, PassengersTest$satisfaction)
+lda_results
+```
+
+The result of LDA can awe us, since it is known that QDA tends to fit better
+the data. Nonetheless, as it has been disproved above, in this case the model
+obtained using LDA obtained a slight better accuracy (0.8718).
+
+
+### A benchmark model.
+In order to finish the statistical classification, it can be interesting to compare
+our results with a benchmark model. Benchmarking is the process of comparing your 
+result to existing methods. 
+In this case, what will be the accuracy on a benchmark model that predicts the 
+most frequent outcome for all observations?
+```{r}
+# First off, let's check which is the most frequent outcome.
+table(PassengersTrain$satisfaction) # ergo, the most frequent outcome is dissatisfied. 
+
+# Now, let's obtain the accuracy of this model.
+obs <- max(table(PassengersTest$satisfaction))
+benchmark <- obs/nrow(PassengersTest)
+benchmark
+```
+
+Note the benchmark is not so bad. However, this model is not the most efficient
+one in terms of performance measurements. In comparison with the other methods
+applied above (Penalized logistic regression (accuracy: 0.8735),
+QDA (accuracy: 0.8538) and LDA (accuracy: 0.8718), it is very clear
+that Penalized logistic regression seemed to be the most efficient method.
+
+
+
+## Machine-learning classification.
+A machine learning model is a file that has been trained to recognize certain
+types of patterns. We train a model over a set of data, providing it an algorithm
+that it can use to reason over and learn from those data. 
+For now, let’s try decision trees and random forests and check out which are the
+outputs and predictions of our models.
+
+
+### Decision trees
+Decision trees are a decision support tool that uses a tree-like model of 
+decisions and their possible consequences. Nonetheless, before starting, one must
+be aware of both advantages and disadvantages of this method.
+
+    - Advantages:
+      1. Requires less effort for data preparation and pre-processing.
+      2. Very intuitive and easy to explain.
+      
+    - Disadvantages:
+      1. A small change in the data can cause a large change in the structure.
+      2. Decision trees often involve higher time to train the model.
+      
+The very first step is to choose the hyper-parameters.
+Note that many models contain parameters that cannot be learned from
+the training data and therefore must be set by us. These are known as
+hyperparameters. The results of a model can depend to a great extent on the
+value that its hyperparameters take, yet it is not possible to know in
+advance which is the appropriate one. 
+The most common way to find optimal values is by trying different possibilities.
+Hence, the best combination of hyperparameters is selected by trying several
+combinations and comparing the accuracy, precision and specificity. 
+
+There are many important hyperparameters, along the lines of:
+
+    1. minsplit: minimum number of observations in a node before before a split.
+    2. maxdepth: maximum depth of any node of the final tree.
+    3. cp; degree of complexity, the smaller the more branches.
+    
+```{r}
+set.seed(123)
+# In this case, the process will start with some random values: minsplit = 30,
+# maxdepth = 10, and cp = 0.01.
+control = rpart.control(minsplit = 30, maxdepth = 10, cp=0.01)
+
+# Then, the model is created using the function 'rpart()'. Rpart is a powerful
+# machine learning library in R that is used for building classification and 
+# regression trees. This library implements recursive partitioning and is very
+# easy to use. It contains:
+#     1. formula: in this case, it refers to the dependent variable. It is
+#        satisfaction~. because it is desired to predict the variable satisfaction
+#        with respect to the rest of the variables in the dataset.
+#     2. data: an optional data frame in which to interpret the variables named 
+#        in the formula; it will be the training dataset.
+#     3. method: if the dependent variable is a factor, method = 'class'.
+#     4. control: used to specify the hyperparameters.
+
+dtFit <- rpart(satisfaction ~., data=PassengersTrain, method = "class", control = control)
+summary(dtFit)
+
+# Once the model is done, it is key to visualize it:
+rpart.plot(dtFit, digits=3)
+```
+
+Being this the first version of our decision tree, an interpretation is 
+a must to understand this output. If we were to start analyzing from the
+beginning, one could tell that a key variable is 'Online.boarding'. One
+could say that this a prime factor in the satisfaction, as well as
+'Inflight.wifi.service' and 'Type.of.travel'. 
+
+On the one hand, let's analyze the case in which the values of online boarding
+are less than 4. This case leads to more than half of passengers being dissatisfied.
+This is comprehensive, since we all know how stressing getting tickets can be.
+When traveling, we need nothing but being comfortable, and if no processes
+like online boarding are available, it could lead to a bad mood. However, something
+that is not a surprise to us is how the bad quality of inflight wifi service 
+influence almost all the satisfaction. 
+
+On the other hand, there is the case in which the values of online boarding
+are either 4 or 5. This case leads to less than half of passengers being
+satisfied. Something that seems curious of this part of the tree is that
+the most satisfied passengers are those traveling because of business and
+having an outstanding inflight wifi service. Regarding the latter, this
+may be due to the exact purpose that these passengers are not paying for the
+plane tickers; however, regarding the latter, the same idea as from the left part
+of the tree is obtained: no good wifi service, no satisfied passenger.
+
+Finally, it is time to predict our model and check the effectiveness using the
+confusion matrix (check above for further explanations).
+```{r}
+dtPred <- predict(dtFit, PassengersTest, type = "class")
+dt_option1_results <- confusionMatrix(factor(dtPred), PassengersTest$satisfaction)
+dt_option1_results
+```
+
+As checked, the following performance measures were obtained: accuracy = 0.8947,
+sensitivity = 0.8942, specificity = 0.8954.
+It looks as though a good model was obtained. Nonetheless, hyperparameters
+play an important role and, as stated above, trying different combinations
+can lead to better outcomes.
+
+
+Option 2: Let's obtain a new model changing the hyperparameters. Here, minsplit
+was changed to 40, and a new parameter was inserted, maxdepth, with value 12.
+```{r}
+set.seed(123)
+caret.fit <- train(satisfaction~., 
+                   data = PassengersTrain, 
+                   method = "rpart",
+                   control=rpart.control(minsplit = 40, maxdepth = 12),
+                   trControl = trainControl(method = "cv", number = 5),
+                   tuneLength=10)
+```
+
+Finally, it is time to predict our model and  check the effectiveness using
+the confusion matrix (check above for further explanations).
+```{r}
+plot(caret.fit)
+caret.fit$results
+caret.fit
+```
+
+As checked, the following performance measures were obtained: with
+a cp of 0.004009046, the best model is obtained with an accuracy = 0.9253914.
+But observing the graph of the Accuracy vs. Complexity Parameter, it can be said
+that the greater the complexity parameter, the lower the accuracy.
+
+Now, let's observe the predictions:
+```{r}
+dt_pred <- predict(caret.fit, PassengersTest)
+dt_option2_results <- confusionMatrix(factor(dt_pred), PassengersTest$satisfaction)
+dt_option2_results
+```
+
+It looks as though a good model was obtained with an accuracy = 0.9223,
+sensitivity = 0.9326 and specificity = 0.9089. Nonetheless, lets analyze what
+changes were made so that this hyperparameters led to a better model.
+```{r}
+rpart.plot(caret.fit$finalModel)
+```
+
+It looks as though more variables were taken into consideration: 'Checkin.service',
+'Seat.comfort', 'Class', 'Inflight.entertainment', 'Leg.room.service' and 'Customer.Type'.
+This model seems more realistic, in my sincere opinion. It is considering factors
+that really influence directly in the day-to-day satisfaction of passengers with 
+airlines. Nonetheless, I must say that I did not expect the type of customer to
+be as important as I thought.
+
+
+### Random forests.
+Random forests are a classification algorithm consisting of many decisions trees.
+It uses bagging and feature randomness when building each individual tree to try
+to create an uncorrelated forest of trees whose prediction by committee is more
+accurate than that of any individual tree. After everything, it has some advantages
+and, unfortunately, some disadvantages too:
+
+    - Advantages:
+      1. Reduces overfitting in decision trees and helps improve the accuracy.
+      2. Works well with categorical and continuous value.
+      
+    - Disadvantages:
+      1. Requires much computational power.
+      2. Requires much time for training as it combines a lot of decision trees to 
+      determine the class.
+
+```{r}
+set.seed(123)
+# The model is created using the function 'randomForest()'. It implements Breiman's
+# random forest algorithm (based on Breiman and Cutler's original Fortran code) 
+# for classification and regression. It contains important fields like:
+#     1. formula: in this case, it refers to the dependent variable. It is
+#        satisfaction~. because it is desired to predict the variable satisfaction
+#        with respect to the rest of the variables in the dataset.
+#     2. data: an optional data frame in which to interpret the variables named 
+#        in the formula; it will be the training dataset.
+#     3. mree: set to 200.
+#     4. mtry: set to 10.
+
+rf.train <- randomForest(satisfaction ~., data=PassengersTrain, ntree=200, mtry=10, importance=TRUE, do.trace=T)
+
+# Finally, it is time to predict our model and check the effectiveness
+# using the confusion matrix (check above for further explanations).
+rf.pred <- predict(rf.train, PassengersTest)
+rf_option1_results <- confusionMatrix(factor(rf.pred), PassengersTest$satisfaction)
+rf_option1_results
+```
+
+As checked, the following performance measures were obtained: accuracy = 0.9622,
+sensitivity = 0.9815, specificity = 0.9369.
+At very first sight, one may think that it represents a good model with
+outstanding results. In hindsight, a high accuracy measured on the training 
+set may be a result of overfitting. In fact, an accuracy measure of anything
+between 70%-90% is not only ideal, it's realistic. However, because the values
+exposed above are greater than 90%, it may lead to some doubts about the method
+used.Let's try another model with different hyperparameters.
+
+
+Option 2: let's switch the hyperparameters.
+```{r}
+set.seed(123)
+# Let's obtain a new model changing the hyperparameters.
+rf.train <- train(satisfaction ~., 
+                  method = "rf", 
+                  data = PassengersTrain,
+                  preProcess = c("center", "scale"),
+                  ntree = 200,
+                  tuneGrid = expand.grid(mtry=c(6,8,10)),
+                  trControl = trainControl(method = "cv", number = 5))
+
+# Finally, it is time to predict our model and  check the effectiveness using
+# the confusion matrix (check above for further explanations).
+rf.train$results
+rf.train
+```
+
+As checked, the following performance measures were obtained: with
+mtry = 10, the best model is obtained with an accuracy = 0.9624729.
+Now, let's observe the predictions:
+```{r}
+rfPred = predict(rf.train, newdata=PassengersTest)
+rf_option2_results <- confusionMatrix(factor(rfPred), PassengersTest$satisfaction)
+rf_option2_results
+```
+
+It looks as though a worse model than the obtained before; having an accuracy = 0.9616,
+sensitivity = 0.9807 and specificity = 0.9366.
+In terms of values it may look better. However, as said before, values greater
+than 0.9 may mean a totally different thing. More about this in the conclusions from
+below.
+
+
+## Conclusions about classification.
+Once several methods have been applied to predict the chosen categorical variable
+('satisfaction'), it is time to summarize the classification part and continue with
+the rest.
+For this, to give a little rundown of all the models performed above, let's 
+observe the code below.
+
+```{r}
+results <- rbind(c("BENCHMARK", benchmark),
+                 c("PENALIZED LOGISTIC REGRESSION:", plr_results$overall[1]),
+                 c("QDA", qda_results$overall[1]),
+                 c("LDA", lda_results$overall[1]),
+                 c("DECISION TREES (OPTION 1)", dt_option1_results$overall[1]),
+                 c("DECISION TREES (OPTION 2)", dt_option2_results$overall[1]),
+                 c("RANDOM FORESTS TREES (OPTION 1)", rf_option1_results$overall[1]),
+                 c("RANDOM FORESTS (OPTION 2)",rf_option2_results$overall[1]))
+results
+```
+
+During this portion of the project, there are lots of models. Nonetheless, it is
+of high vitality to always consider the "No-Free-Lunch-Theorem", which states that
+there is no best algorithm that works best in all cases. Because of this, it is
+in us to whether or not consider a model good enough. In addition, each model 
+has its limitations.
+
+As observed in the results from above, several model were contemplated in the 
+prediction of the variable 'satisfaction', all the way from a simple benchmark
+model to a complex, long and CPU-consuming random forest.
+It looks as though all the models show very good results, better than expected.
+Nonetheless, the best model ended up being a random forest. Moreover, as stated earlier,
+it is of high vitality to comment on the fact that an accuracy of 0.9622 was obtained.
+
+It is known that 'extremely' high values of accuracy are not a good sign, or
+are not always a good sign, meaning that something wrong could have been done.
+Howbeit, what if we take a further look at out categorical variable: it measures
+the satisfaction of certain clients, consisting of 0 and 1.
+Now if we realize, all the high accuracies are not wrong, these simply mean that
+our categorical variable is so easy to predict, that any advanced model with
+good hyperparameters could predict almost perfectly the outcomes.
+
+Before finishing, it will be interesting to analyze how expensive the chosen
+method (Random forests) will be in case this was the main goal of a company.
+Because there is no such cost variable to use from the dataset, it is possible
+to set our own values.
+
+
+Cost matrix:
+
+| Prediction/Reference | no | yes  |
+| -------------------- | -----:| ---------:|
+| predicted no                |   0 |  500  |
+| predicted yes             |   100 |     140  |
+
+
+Unit cost is then:
+0\*TN + 100\*FP + 500\*FN + 140\*TP
+
+```{r}
+cost.unit <- c(0, 100, 500, 140)
+cost_rf = sum(as.vector(rf_option1_results$table)*cost.unit)/sum(rf_option1_results$table)
+cost_rf
+```
+
+
+# Regression
+Regression, one of the most common types of machine learning models, 
+estimates the relationships between variables. Whereas classification models
+identify which category an observation belongs to, regression models estimate
+a numeric value.
+
+Note that for this part, as stated in the introduction of the homework, a 
+numerical variable has to be chosen. However, it is not logic to choose a variable
+randomly; that is, there must be some goals or objectives, and then check which
+variable is the most useful one. 
+
+What is it desired to predict? Why?
+In my case, I desire to predict the variable "Departure.Arrival.time.convenient".
+The main reason why I choose this variable to be my target variable is because
+I do certainly believe that it could be exciting to predict how convenient the 
+departure and arrival times seem to be for passengers. It may be obvious that
+this is a goal that could be answered by saying: some passengers think it is more
+convenient to fly in the morning and others in the afternoon. However, it is of
+high curiosity to know if this is irrelevant and if what really matters is the 
+other aspects of a flight.
+
+
+## Model selection.
+Before starting, it is key to understand that no methods can still be applied,
+since a previous step needs to be done. Before you begin the regression analysis,
+you should review the dataset to develop an understanding of the relevant variables, 
+their relationships, and the expected coefficient signs and effect magnitudes.
+That is, the strong objective is to identify the subset of the p variables that
+is really associated to the response.
+
+To determine whether the selected model is good or not, there are some quality
+measures along the lines of Adjusted R-Squared, Akaike information criterion (AIC),
+Bayesian information criterion (BIC)...
+
+From the list of methods that can be applied to estimate the best model, the one 
+that should be chosen should be subset selection. Best subset selection is a method
+that aims to find the subset of independent variables (Xi) that best predict the
+outcome (Y) and it does so by considering all possible combinations of independent variables.
+
+Nonetheless, due to the extensiveness of the dataset, another method is followed:
+stepwise selection. Stepwise regression is the step-by-step iterative construction
+of a regression model that involves the selection of independent variables to be
+used in a final model. It involves adding or removing potential explanatory variables
+in succession and testing for statistical significance after each iteration.
+
+If we have k independent variables under consideration, best subset selection:
+
+    1. Begins with a model that contains no variables (called the Null Model).
+    2. Then starts adding the most significant variables one after the other.
+    3. Until a pre-specified stopping rule is reached or until all the variables
+    under consideration are included in the model.
+    
+Here’s an example of forward selection with 5 variables:
+
+<center>
+<img src="forward-stepwise-algorithm.png" width="500"/>
+</center>
+
+<br>
+
+
+### Stepwise selection.
+As stated above, the selected target variable is "Departure.Arrival.time.Convenient".
+Let's try this model and see if by combining almost all the variables in the dataset,
+a good outcome can be obtained.
+```{r}
+set.seed(123)
+# In order to test the model, the function 'lm()' is used. It fits linear models
+# and has some fields like:
+#     - formula: a symbolic description of the model to be fitted.
+#     - data: an optional data frame, list or environment containing the variables in the model.
+
+linFit <- lm(Departure.Arrival.time.convenient ~ Age + Flight.Distance + Inflight.wifi.service + 
+               Ease.of.Online.booking + Gate.location + Food.and.drink + Online.boarding + Seat.comfort +
+               Inflight.entertainment + On.board.service + Leg.room.service + Baggage.handling + Checkin.service +
+               Inflight.service + Cleanliness + Departure.Delay.in.Minutes + Arrival.Delay.in.Minutes,
+             data=PassengersTrain)
+summary(linFit)
+```
+
+Somehow a bad model. Why? Some theoretical background is needed. The adjusted
+R-squared is a modified version of R-squared that adjusts for predictors that
+are not significant in a regression model.
+Compared to a model with additional input variables, a lower adjusted R-squared
+indicates that the additional input variables are not adding value to the model;
+and a higher adjusted R-squared indicates that the additional input variables are 
+adding value to the model.
+By the results seen in the function 'summary()', the adjusted R-squared is 
+0.3015. Hence, from my point of view, it is better to restructure this part of
+the project. By this it is meant that the target variable that was thought
+to be good, it ended up being not, since a bad R-squared value is obtained
+using almost all the variables.
+```{r}
+set.seed(123)
+# Let's change our categorical variable to "Departure.Delay.in.Minutes":
+linFit <- lm(Departure.Delay.in.Minutes ~ Age + Flight.Distance + Inflight.wifi.service + 
+               Ease.of.Online.booking + Gate.location + Food.and.drink + Online.boarding + Seat.comfort +
+               Inflight.entertainment + On.board.service + Leg.room.service + Baggage.handling + Checkin.service +
+               Inflight.service + Cleanliness + Departure.Arrival.time.convenient + Arrival.Delay.in.Minutes,
+             data=PassengersTrain)
+summary(linFit)
+```
+
+Somehow a lot better. The value of the adjusted R-squared increased more than 
+0.6. Therefore, the new categorical variables seems a good choice. Let's check
+how does the model behave under a stepwise AIC.
+
+This is performed using the function "ols_step_both_aic()". It is used to
+build a regression model from a set of candidate predictor variables by entering
+and removing predictors based on akaike information criteria, in a stepwise manner
+until there is no variable left to enter or remove any more.
+```{r}
+stepwise <- ols_step_both_aic(linFit) 
+stepwise
+
+# Now it is time to try to make a prediction in the testing dataset.
+predictions <- predict(linFit, newdata=PassengersTest)
+cor(PassengersTest$Departure.Delay.in.Minutes, predictions)^2
+```
+
+The value obtained (0.9302968) is a little bit better than in the testing
+dataset. Hence, because these values are not very different, there is no
+overfitting.
+
+
+## Regularization methods.
+Regularization is a technique which makes slight modifications to the learning
+algorithm such that the model generalizes better. This in turn improves the
+model’s performance on the unseen data as well.
+
+The models done above are completely fine but it is time to go further and try 
+some more advanced methods with which better outputs could be obtained. Hence,
+let's make models with statistical learning and machine learning and check 
+the results. 
+First off, let's define some methods or variables that may be needed later on
+through the project.
+```{r}
+set.seed(123)
+# To begin with, the function 'trainControl()' is used to choose the resampling method.
+# The function trainControl generates parameters that further control how models
+# are created, with important values like :
+#     1. 'method': the resampling method. In this case, 'cv' was applied, which stands
+#         for cross-validation (a statistical method of evaluating and comparing learning
+#         algorithms by dividing data into two segments: one used to learn or train a model
+#         and the other used to validate the model).
+#     2. 'number': either the number of folds or the number of resampling iterations.
+#         In this case, a 5-fold cross-validation is considered a good choice,
+#         since it is considered to obtain pretty accurate results. 
+
+ctrl <- trainControl(method = "cv", number = 5,
+                     classProbs = TRUE, 
+                     verboseIter=T)
+
+# Secondly, let's state the model that will be used:
+ModelS <- Departure.Delay.in.Minutes ~ Age + Flight.Distance + Inflight.wifi.service + 
+  Ease.of.Online.booking + Gate.location + Food.and.drink + Online.boarding + Seat.comfort +
+  Inflight.entertainment + On.board.service + Leg.room.service + Baggage.handling + Checkin.service +
+  Inflight.service + Cleanliness + Departure.Arrival.time.convenient + Arrival.Delay.in.Minutes
+
+# Finally, as from now on we are going to try many models,it’s convenient to create
+# a data frame with the predictor.
+test_results <- data.frame(Departure.Delay.in.Minutes = PassengersTest$Departure.Delay.in.Minutes)
+```
+
+
+### Linear regression.
+The first method is linear regression. In statistics, linear regression is a 
+linear approach for modelling the relationship between a scalar response and
+one or more explanatory variables. It is a very simple tool that has
+no bias but large variance in high dimension and provides good interpretation.
+```{r}
+# The first step is to train using the function "train()" from the caret package.
+# It contains some remarkable fields:
+#     1. 'form': A formula of the form y ~ x1 + x2 + ... Used to detail the 
+#        variable to be studied.
+#     2. data: dataset used to make predictions.
+#     3. 'method': a string specifying which classification or regression model
+#        to use.
+#     4. 'preProc': as its name says, it stands for "preProcessing". In this case,
+#        it is stated to both scale and center the data. This is key in regression,
+#        since it is often recommended to scale the features so that the predictors
+#        have a mean of 0.
+#     5. 'trControl': the resampling method.
+
+lm_tune <- train(ModelS, data = PassengersTrain, 
+                 method = "lm", 
+                 preProc=c('scale', 'center'),
+                 trControl = ctrl)
+
+lm_tune
+```
+
+As observed, a good value of R-Squared is obtained in the testing set (0.93316).
+However, will the same happen in the testing set?
+```{r}
+test_results$lm <- predict(lm_tune, PassengersTest)
+postResample(pred = test_results$lm,  obs = test_results$Departure.Delay.in.Minutes)
+```
+
+Indeed, the same happens in the testing set, even getting worse results:
+0.9302968.
+
+
+### Ridge regression
+Ridge regression is a model tuning method that is used to analyse any data that
+suffers from multicollinearity. This method performs L2 regularization. When the
+issue of multicollinearity occurs, least-squares are unbiased, and variances are large,
+this results in predicted values being far away from the actual values.
+```{r}
+set.seed(123)
+# Firt off, a grid for the hypertuning is defined.
+ridge_grid <- expand.grid(lambda = seq(0, .1, length = 100))
+
+# Then, the next step is to train using the function "train()" from the caret package.
+# It contains some remarkable fields:
+#     1. 'form': A formula of the form y ~ x1 + x2 + ... Used to detail the 
+#        variable to be studied. In this case, this information is stored in
+#        ModelS previously defined.
+#     2. data: dataset used to make predictions. As it is desired to train before
+#        testing, the dataset partitioned beforehand is used (PassengersTrain)
+#     3. 'method': a string specifying which classification or regression model
+#        to use.
+#     4. 'preProc': as its name says, it stands for "preProcessing". In this case,
+#        it is stated to both scale and center the data. This is key in regression,
+#        since it is often recommended to scale the features so that the predictors
+#        have a mean of 0.
+#     5. 'tuneGrid': By default, caret will estimate a tuning grid for each method.
+#        However, sometimes the defaults are not the most sensible given the nature 
+#        of the data. The tuneGrid argument allows the user to specify a custom
+#        grid of tuning parameters as opposed to simply using what exists implicitly.
+#     6. 'trControl': the resampling method.
+ridge_tune <- train(ModelS, data = PassengersTrain,
+                    method='ridge',
+                    preProc=c('scale','center'),
+                    tuneGrid = ridge_grid,
+                    trControl=ctrl)
+```
+
+Let's check which was the value of lambda that performed the best:
+```{r}
+ridge_tune$bestTune
+plot(ridge_tune)
+```
+
+Indeed, the best tune is 0. Now it is time to predict on the testing set:
+```{r}
+test_results$ridge <- predict(ridge_tune, PassengersTest)
+postResample(pred = test_results$ridge,  obs = test_results$Departure.Delay.in.Minutes)
+```
+
+In this case, the value of 0.9302968 is obtained.
+
+
+### Lasso.
+Lasso regression is a type of linear regression that uses shrinkage. Shrinkage
+is where data values are shrunk towards a central point, like the mean. The lasso
+procedure encourages simple, sparse models (i.e. models with fewer parameters).
+This particular type of regression is well-suited for models showing high levels
+of muticollinearity or when you want to automate certain parts of model selection,
+like variable selection/parameter elimination.
+```{r}
+set.seed(123)
+# Firt off, a grid for the hypertuning is defined.
+lasso_grid <- expand.grid(fraction = seq(.01, 1, length = 100))
+
+# Moreover, the next step is to train using the function "train()" from the caret package.
+# It contains some remarkable fields:
+#     1. 'form': A formula of the form y ~ x1 + x2 + ... Used to detail the 
+#        variable to be studied. In this case, this information is stored in
+#        ModelS previously defined.
+#     2. data: dataset used to make predictions. As it is desired to train before
+#        testing, the dataset partitioned beforehand is used (PassengersTrain)
+#     3. 'method': a string specifying which classification or regression model
+#        to use.
+#     4. 'preProc': as its name says, it stands for "preProcessing". In this case,
+#        it is stated to both scale and center the data. This is key in regression,
+#        since it is often recommended to scale the features so that the predictors
+#        have a mean of 0.
+#     5. 'tuneGrid': By default, caret will estimate a tuning grid for each method.
+#        However, sometimes the defaults are not the most sensible given the nature 
+#        of the data. The tuneGrid argument allows the user to specify a custom
+#        grid of tuning parameters as opposed to simply using what exists implicitly.
+#     6. 'trControl': the resampling method. In this case, cross-validation.
+lasso_tune <- train(ModelS, data = PassengersTrain,
+                    method='lasso',
+                    preProc=c('scale','center'),
+                    tuneGrid = lasso_grid,
+                    trControl=ctrl)
+```
+
+Let's check which was the value of the tune that performed the best:
+```{r}
+lasso_tune$bestTune
+plot(lasso_tune)
+```
+
+Indeed, the best tune is with fraction 0.99. Now it is time to predict on the testing set:
+```{r}
+test_results$lasso <- predict(lasso_tune, PassengersTest)
+postResample(pred = test_results$lasso,  obs = test_results$Departure.Delay.in.Minutes)
+```
+
+In this case, the value of 0.9303033 is obtained.
+
+
+## Conclusions about regression.
+Once several methods have been applied to predict the chosen numerical variable
+('Departure.Delay.in.Minutes'), it is time to end the regression part and move on.
+
+As observed in the results obtained above, several model were used in the 
+prediction of the variable 'Departure.Delay.in.Minutes', all the way from a 
+simple linear regression model to a lasso.
+
+It looks as though all the models show very good results, but, to be precise,
+it was Lasso regression the one that helped us obtain better outcomes, with a value of 
+R-Squared of 0.9303033. This result is curious, but easy to interpret. Lasso tends to
+obtain better results in comparison to other models. Even so, in this case, Lasso
+regression performed better because there are a small number of significant parameters
+and the others are close to zero or, in other words, only a few predictors actually
+influence the response.
+
+
+# Overall conclusion.
+After all the work that has been exposed above, it is time to provide a wrap-up
+about the most important aspects discussed, as well as what was the best model.
+
+It has always been demonstrated in the data science community that random forests are
+one of the most powerful models ever created. Nonetheless, it was not until I 
+tried it by myself that I started to fully believe this. This was made crystal
+clear due to the exact purpose that *random forest is the best model of the entire*
+*project, demonstrated to have had high performance measures and a low cost*,
+obtaining an accuracy around 0.95 and a cost around 70.8.
+
+Due to the extent of this dataset, I was not able to perform new methods that
+would have taught me more about machine learning (like K-NN). Conversely, 
+it is a fact that better outcomes could have been obtained with them.
+
+
+# Bibliography.
+[1]IBM, “What is Supervised Learning?,” www.ibm.com, Aug. 19, 2020. https://www.ibm.com/cloud/learn/supervised-learning
+
+[2]A. Kumar, “Python - Replace Missing Values with Mean, Median & Mode,” Data Analytics, Oct. 03, 2021. https://vitalflux.com/pandas-impute-missing-values-mean-median-mode/#How_to_decide_which_imputation_technique_to_use (accessed Dec. 03, 2022).
+
+[3]P. Patil, “What is Exploratory Data Analysis?,” Towards Data Science, Mar. 23, 2018. https://towardsdatascience.com/exploratory-data-analysis-8fc1cb20fd15
+
+[4]G. Mrukwa, “Supervised and Unsupervised Machine Learning - Types of ML,” www.netguru.com, Oct. 08, 2018. https://www.netguru.com/blog/supervised-machine-learning
+
+[5]“What is Logistic Regression?,” Statistics Solutions. https://www.statisticssolutions.com/free-resources/directory-of-statistical-analyses/what-is-logistic-regression/
+
+[6]J. Brownlee, “A Gentle Introduction to the Bayes Optimal Classifier,” Machine Learning Mastery, Dec. 03, 2019. https://machinelearningmastery.com/bayes-optimal-classifier/
+
+[7]R. Vickery, “8 Metrics to Measure Classification Performance,” Medium, Dec. 08, 2021. https://towardsdatascience.com/8-metrics-to-measure-classification-performance-984d9d7fd7aa
+
+[8]G. Choueiry, “Understand Best Subset Selection – Quantifying Health,” Quantifying Health. https://quantifyinghealth.com/best-subset-selection/
+
+[9]CFI Team, “Adjusted R-squared,” Corporate Finance Institute, Nov. 03, 2022. https://corporatefinanceinstitute.com/resources/data-science/adjusted-r-squared/#:~:text=Compared%20to%20a%20model%20with
+
