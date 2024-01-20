@@ -1,0 +1,1 @@
+The aim of this homework was to apply supervised-learning tools to an open data set. It is divided into classification and advanced regression. It was a must to predict the targets and explain the relations between the target and the predictors, while getting convenient insights considering ideas from risk learning. 
